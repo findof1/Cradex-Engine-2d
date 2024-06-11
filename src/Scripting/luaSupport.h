@@ -1,4 +1,4 @@
-#include "gameObject.h"
+#include "Classes/gameObject.h"
 extern "C"
 {
 #include "lua.h"

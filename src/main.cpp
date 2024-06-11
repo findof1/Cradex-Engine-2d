@@ -2,17 +2,17 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <math.h>
-#include "shader.h"
-#include "texture.h"
+#include "Classes/shader.h"
+#include "Classes/texture.h"
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "External/stb_image.h"
 #include <glm/glm/glm.hpp>
 #include <glm/glm/gtc/matrix_transform.hpp>
 #include <glm/glm/gtc/type_ptr.hpp>
-#include "renderer.h"
-#include "window.h"
-#include "gameObject.h"
-#include "luaSupport.h"
+#include "Classes/renderer.h"
+#include "Classes/window.h"
+#include "Classes/gameObject.h"
+#include "Scripting/luaSupport.h"
 #include <filesystem>
 #include <unordered_set>
 extern "C"
@@ -30,8 +30,8 @@ int main()
   Shader shader("./Shaders/vertexShader.vs", "./Shaders/fragmentShader.fs");
   Renderer renderer;
 
-  Texture texture1("wall.jpg", GL_TEXTURE0);
-  Texture texture2("awesomeface.png", GL_TEXTURE1);
+  Texture texture1("./Textures/wall.jpg", GL_TEXTURE0);
+  Texture texture2("./Textures/awesomeface.png", GL_TEXTURE1);
 
   float movX = 0;
   float movY = 0;
