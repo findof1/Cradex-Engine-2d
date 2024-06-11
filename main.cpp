@@ -68,7 +68,7 @@ int main()
   lua_pushcclosure(L, drawGameObject, 1);
   lua_setglobal(L, "drawGameObject");
 
-  int result = luaL_dofile(L, "bin/script.lua");
+  int result = luaL_dofile(L, "script.lua");
 
   if (result != LUA_OK)
   {
