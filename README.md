@@ -14,4 +14,6 @@ To add your own functionality:
 
 1. **Edit Script**: Customize the behavior of the engine by editing the `script.lua` file.
 
-2. **Programming**: Program additional features using the engine according to your requirements.
+2. **Programming**: You can program the lua file to create basic 2d games
+
+3. **Documentation**: Documentation for our custom lua functions will be released soon
