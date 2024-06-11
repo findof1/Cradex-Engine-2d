@@ -35,6 +35,30 @@ public:
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(int), indices.data(), GL_STATIC_DRAW);
+    void drawCircle(int radius) {
+    int size = 2 * radius + 1;
+    
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            float distance = sqrt(pow((i - radius), 2) + pow((j - radius), 2));
+            
+            if (fabs(distance - radius) < 0.5)
+                printf("*");
+            else
+                printf(" ");
+        }
+        printf("\n");
+    }
+}
+    int main() {
+    int radius;
+    printf("Enter the radius of the circle: ");
+    scanf("%d", &radius);
+    
+    drawCircle(radius);
+    
+    return 0;
+}
   }
 
   void draw(int start, int count) const
