@@ -1,0 +1,1 @@
+To use the engine, just download the Cradex Engine.zip file in the root directory, unzip the folder, and then you can open main.exe to run. To add your own functionality you can edit the script.lua and program using the engine.
