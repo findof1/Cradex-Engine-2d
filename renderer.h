@@ -3,6 +3,7 @@
 
 #include <glad/glad.h>
 #include <vector>
+#include <iostream>
 
 class Renderer
 {
@@ -11,7 +12,7 @@ public:
   std::vector<float> vertices;
   std::vector<int> indices;
 
-  Renderer(const std::vector<float> &inputVertices, const std::vector<int> &inputIndices)
+  Renderer(const std::vector<float> &inputVertices = {}, const std::vector<int> &inputIndices = {})
   {
     vertices = inputVertices;
     indices = inputIndices;
@@ -39,6 +40,7 @@ public:
   void draw(int start, int count) const
   {
     glBindVertexArray(VAO);
+
     glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, (void *)(start * sizeof(int)));
   }
 
@@ -48,28 +50,19 @@ public:
     glBufferSubData(GL_ARRAY_BUFFER, 0, newVertices.size() * sizeof(float), newVertices.data());
   }
 
-  void addRectangle(const std::vector<float> &position, const std::vector<float> &scale, const std::vector<float> &color = {1, 1, 1, 1}, const std::vector<float> &texPos = {0, 1})
+  void addRectangle(const std::vector<float> &position, const std::vector<float> &scale, const std::vector<float> &color = {1.0f, 1.0f, 1.0f, 1.0f}, const std::vector<float> &texPos = {0, 1})
   {
     float x = position[0];
     float y = position[1];
-    float z;
-    if (2 < position.size())
-    {
-      z = position[2];
-    }
-    else
-    {
-      z = 0.0f;
-    }
 
     float width = scale[0];
     float height = scale[1];
 
     std::vector<float> rectVertices = {
-        x, y, z, color[0], color[1], color[2], color[3], texPos[0], texPos[1],
-        x + width, y, z, color[0], color[1], color[2], color[3], texPos[1], texPos[1],
-        x + width, y + height, z, color[0], color[1], color[2], color[3], texPos[1], texPos[0],
-        x, y + height, z, color[0], color[1], color[2], color[3], texPos[0], texPos[0]};
+        x, y, 0.0f, color[0], color[1], color[2], color[3], texPos[0], texPos[1],
+        x + width, y, 0.0f, color[0], color[1], color[2], color[3], texPos[1], texPos[1],
+        x + width, y + height, 0.0f, color[0], color[1], color[2], color[3], texPos[1], texPos[0],
+        x, y + height, 0.0f, color[0], color[1], color[2], color[3], texPos[0], texPos[0]};
 
     int startIndex = vertices.size() / 9;
     int numVertices = rectVertices.size() / 9;

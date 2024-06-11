@@ -11,92 +11,135 @@
 #include <glm/glm/gtc/type_ptr.hpp>
 #include "renderer.h"
 #include "window.h"
-
-void processInput(GLFWwindow *window, Shader shader, float *movX, float *movY, float deltaTime);
-void framebuffer_size_callback(GLFWwindow *window, int width, int height);
-
+#include "gameObject.h"
+#include "luaSupport.h"
+#include <filesystem>
+#include <unordered_set>
+extern "C"
+{
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
+}
+std::unordered_set<int> pressedKeys;
+void processInput(GLFWwindow *window, float deltaTime, lua_State *L);
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 int main()
 {
   Window window;
   Shader shader("./Shaders/vertexShader.vs", "./Shaders/fragmentShader.fs");
+  Renderer renderer;
 
-  Texture texture1("awesomeface.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
-  // Texture texture2("awesomeface.png", GL_TEXTURE_2D, GL_TEXTURE1, GL_RGBA, GL_UNSIGNED_BYTE);
-
-  Renderer renderer({}, {});
-  renderer.addRectangle({-1.0f, -1.0f, -0.5f}, {2.0f, 2.0f}, {0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 2.0f});
-  renderer.addRectangle({0.0f, 0.0f, 0.0f}, {1.0f, 1.0f});
-  shader.use();
-
-  shader.setInt("textureActive", 1);
-
-  shader.setInt("texture1", 0);
-
-  shader.setInt("mixVal", 1.0f);
-
-  glm::vec4 overrideColor(-1.0f, -1.0f, -1.0f, -1.0f);
-  shader.setFloatVec4("overrideColor", overrideColor);
-  glm::mat4 trans = glm::mat4(1.0f);
+  Texture texture1("wall.jpg", GL_TEXTURE0);
+  Texture texture2("awesomeface.png", GL_TEXTURE1);
 
   float movX = 0;
   float movY = 0;
+  float velocityX = 0;
+  float velocityY = 0;
+
+  lua_State *L = luaL_newstate();
+  luaL_openlibs(L);
+
+  lua_pushlightuserdata(L, &renderer);
+  lua_pushlightuserdata(L, &window);
+  lua_pushcclosure(L, createGameObject, 2);
+  lua_setglobal(L, "createGameObject");
+
+  lua_pushcclosure(L, setGameObjectPosition, 0);
+  lua_setglobal(L, "setGameObjectPosition");
+
+  lua_pushcclosure(L, setGameObjectScale, 0);
+  lua_setglobal(L, "setGameObjectScale");
+
+  lua_pushcclosure(L, setGameObjectRotation, 0);
+  lua_setglobal(L, "setGameObjectRotation");
+
+  lua_pushcclosure(L, getGameObjectRotation, 0);
+  lua_setglobal(L, "getGameObjectRotation");
+
+  lua_pushcclosure(L, getGameObjectPosition, 0);
+  lua_setglobal(L, "getGameObjectPosition");
+
+  lua_pushcclosure(L, getGameObjectScale, 0);
+  lua_setglobal(L, "getGameObjectScale");
+
+  lua_pushlightuserdata(L, &shader);
+  lua_pushcclosure(L, drawGameObject, 1);
+  lua_setglobal(L, "drawGameObject");
+
+  int result = luaL_dofile(L, "bin/script.lua");
+
+  if (result != LUA_OK)
+  {
+    const char *errorMsg = lua_tostring(L, -1);
+    std::cerr << "Error loading Lua script: " << errorMsg << std::endl;
+    lua_pop(L, 1);
+  }
+
+  glfwSetKeyCallback(window.window, key_callback);
 
   double lastFrame = glfwGetTime();
+
   while (!glfwWindowShouldClose(window.window))
   {
     double currentFrame = glfwGetTime();
     float deltaTime = static_cast<float>(currentFrame - lastFrame);
     lastFrame = currentFrame;
 
-    processInput(window.window, shader, &movX, &movY, deltaTime);
+    processInput(window.window, deltaTime, L);
+
+    movX += velocityX;
+    movY += velocityY;
+    velocityX *= 0.9;
+    velocityY *= 0.9;
 
     window.clear();
-
     shader.use();
     texture1.Bind();
+    texture2.Bind();
+    shader.setInt("texture1", 0);
+    shader.setInt("texture2", 1);
 
-    trans = glm::mat4(1.0f);
-    trans = glm::scale(trans, glm::vec3(1.2f, 2.1f, 0.0f));
-    shader.setMaxrix4("transform", trans);
+    // glm::vec4 overrideColor((sin(glfwGetTime()) + 1.0f) / 2.0f, (sin(glfwGetTime() * 2) + 1.0f) / 2.0f, (sin(glfwGetTime() * 3) + 1.0f) / 2.0f, 1.0f);
+    // shader.setFloatVec4("overrideColor", overrideColor);
 
-    shader.setInt("textureActive", 1);
-    renderer.draw(0, 6);
-    shader.setInt("textureActive", 0);
-
-    trans = glm::mat4(1.0f);
-    trans = glm::scale(trans, glm::vec3(0.2f, 0.35f, 0.0f));
-    trans = glm::translate(trans, glm::vec3(movX, movY, 0.0f));
-    shader.setMaxrix4("transform", trans);
-
-    glm::vec4 overrideColor((sin(glfwGetTime()) + 1.0f) / 2.0f, (sin(glfwGetTime() * 2) + 1.0f) / 2.0f, (sin(glfwGetTime() * 3) + 1.0f) / 2.0f, -1.0f);
-    glUniform4fv(glGetUniformLocation(shader.ID, "overrideColor"), 1, glm::value_ptr(overrideColor));
-    renderer.draw(6, 6);
+    glm::vec4 overrideColor(1.0f, 1.0f, 1.0f, 1.0f);
+    shader.setFloatVec4("overrideColor", overrideColor);
+    lua_getglobal(L, "update");
+    lua_pushnumber(L, deltaTime);
+    lua_call(L, 1, 0);
 
     window.render();
   }
-
+  lua_close(L);
   window.close();
   return 0;
 }
 
-void processInput(GLFWwindow *window, Shader shader, float *movX, float *movY, float deltaTime)
+void processInput(GLFWwindow *window, float deltaTime, lua_State *L)
 {
-  float speed = 5.0f;
-  speed *= deltaTime;
-  if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+  lua_newtable(L);
+
+  int i = 1;
+  for (int key : pressedKeys)
   {
-    *movY += speed;
+    lua_pushinteger(L, i++);
+    lua_pushinteger(L, key);
+    lua_settable(L, -3);
   }
-  if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+
+  lua_setglobal(L, "pressedKeys");
+}
+
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+  if (action == GLFW_PRESS)
   {
-    *movY -= speed;
+    pressedKeys.insert(key);
   }
-  if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+  else if (action == GLFW_RELEASE)
   {
-    *movX -= speed;
-  }
-  if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-  {
-    *movX += speed;
+    pressedKeys.erase(key);
   }
 }
