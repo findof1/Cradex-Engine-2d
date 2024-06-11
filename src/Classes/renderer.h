@@ -35,6 +35,18 @@ public:
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(int), indices.data(), GL_STATIC_DRAW);
+    
+    void drawCircle() {
+    int num_segments = 100;
+    GLfloat angle;
+    glBegin(GL_LINE_LOOP);
+    for (int i = 0; i < num_segments; i++) {
+        angle = 2.0f * M_PI * i / num_segments;
+        GLfloat x = cos(angle);
+        GLfloat y = sin(angle);
+        glVertex2f(x, y);
+    }
+}
   }
 
   void draw(int start, int count) const
